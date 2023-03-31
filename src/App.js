@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import Chart from 'chart.js/auto';
 import Sentiment from 'sentiment';
+import { Analyzer } from 'web-audio-analyser';
 
 function App() {
+
   const [listening, setListening] = useState(false);
   const [confidenceData, setConfidenceData] = useState([]);
   const [sentimentData, setSentimentData] = useState([]);
   const [transcript, setTranscript] = useState('');
+  const [clarityData, setClarityData] = useState([]);
 
   const toggleListening = () => {
     if (listening) {
@@ -14,6 +17,7 @@ function App() {
       recognition.removeEventListener('result', handleResult);
     } else {
       recognition.addEventListener('result', handleResult);
+      recognition.continuous = true;
       recognition.start();
     }
     setListening(!listening);
@@ -23,14 +27,52 @@ function App() {
     const message = event.results[0][0].transcript;
     const confidence = event.results[0][0].confidence;
     const sentiment = new Sentiment().analyze(message).comparative;
+    const clarity = calculateClarity(message);
+
+    // Set the transcript to the latest speech input
+    setTranscript(message);
+
+    // Append the latest confidence, sentiment and clarity data
     setConfidenceData(confidenceData.concat([{ message, confidence }]));
     setSentimentData(sentimentData.concat([{ message, sentiment }]));
-    setTranscript(message);
+    setClarityData(clarityData.concat([{ message, clarity }]));
   };
+
+  const calculateClarity = (message) => {
+    // Split the message into words
+    const words = message.split(' ');
+
+    // Calculate the total number of syllables in the message
+    let syllableCount = 0;
+    words.forEach((word) => {
+      syllableCount += countSyllables(word);
+    });
+
+    // Calculate the average number of syllables per word
+    const avgSyllablesPerWord = syllableCount / words.length;
+
+    // Calculate the clarity score
+    const clarity = 206.835 - (1.015 * avgSyllablesPerWord) - (84.6 * (words.length / message.length));
+
+    return clarity.toFixed(2);
+  };
+
+  const countSyllables = (word) => {
+    word = word.toLowerCase();
+    if (word.length <= 3) {
+      return 1;
+    }
+    word = word.replace(/(?:[^laeiouy]es|ed|[^laeiouy]e)$/, '');
+    word = word.replace(/^y/, '');
+    const matches = word.match(/[aeiouy]{1,2}/g);
+    return matches ? matches.length : 1;
+  };
+
 
   useEffect(() => {
     const confidenceCtx = document.getElementById('confidence-chart');
     const sentimentCtx = document.getElementById('sentiment-chart');
+    const clarityCtx = document.getElementById('clarity-chart');
 
     const confidenceChart = new Chart(confidenceCtx, {
       type: 'line',
@@ -110,13 +152,61 @@ function App() {
       },
     });
 
+    const clarityChart = new Chart(clarityCtx, {
+      type: 'line',
+      data: {
+        datasets: [
+          {
+            label: 'Clarity Score',
+            data: clarityData.map((data, index) => ({ x: index, y: data.clarity })),
+            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+            borderColor: 'rgba(75, 192, 192, 1)',
+            borderWidth: 1,
+            pointRadius: 0,
+          },
+        ],
+      },
+      options: {
+        scales: {
+          x: {
+            title: {
+              display: true,
+              text: 'Time',
+            },
+          },
+          y: {
+            title: {
+              display: true,
+              text: 'Clarity',
+            },
+            min: 0,
+            max: 10,
+          },
+        },
+        plugins: {
+          legend: {
+            display: false,
+          },
+        },
+      },
+    });
+
     return () => {
       confidenceChart.destroy();
       sentimentChart.destroy();
+      clarityChart.destroy();
     };
   }, [confidenceData, sentimentData]);
 
   const recognition = new window.webkitSpeechRecognition();
+  const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+
+  // Listen for the onaudioprocess event to display the text in real-time
+  recognition.addEventListener('audioprocess', (event) => {
+    const message = event.results[0][0].transcript;
+    setTranscript(message);
+  });
 
   return (
     <div className="App">
@@ -139,6 +229,10 @@ function App() {
       <div>
         <h2>Sentiment Chart</h2>
         <canvas id="sentiment-chart" width="400" height="400" />
+      </div>
+      <div>
+        <h2>Clarity Chart</h2>
+        <canvas id="clarity-chart" width="400" height="400" />
       </div>
     </div>
   );
