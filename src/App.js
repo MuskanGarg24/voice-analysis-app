@@ -11,6 +11,7 @@ function App() {
   const [transcript, setTranscript] = useState('');
   const [clarityData, setClarityData] = useState([]);
 
+
   const toggleListening = () => {
     if (listening) {
       recognition.stop();
@@ -22,6 +23,7 @@ function App() {
     }
     setListening(!listening);
   };
+
 
   const handleResult = (event) => {
     const message = event.results[0][0].transcript;
@@ -37,6 +39,25 @@ function App() {
     setSentimentData(sentimentData.concat([{ message, sentiment }]));
     setClarityData(clarityData.concat([{ message, clarity }]));
   };
+
+  // const calculateClarity = (message) => {
+  //   // Split the message into words
+  //   const words = message.split(' ');
+
+  //   // Calculate the total number of syllables in the message
+  //   let syllableCount = 0;
+  //   words.forEach((word) => {
+  //     syllableCount += countSyllables(word);
+  //   });
+
+  //   // Calculate the average number of syllables per word
+  //   const avgSyllablesPerWord = syllableCount / words.length;
+
+  //   // Calculate the clarity score
+  //   const clarity = 206.835 - (1.015 * avgSyllablesPerWord) - (84.6 * (words.length / message.length));
+
+  //   return clarity.toFixed(2);
+  // };
 
   const calculateClarity = (message) => {
     // Split the message into words
@@ -54,8 +75,13 @@ function App() {
     // Calculate the clarity score
     const clarity = 206.835 - (1.015 * avgSyllablesPerWord) - (84.6 * (words.length / message.length));
 
-    return clarity.toFixed(2);
+    // Convert the clarity score to a percentage value between 0 and 100
+    const clarityPercentage = (clarity / 206.835) * 100;
+
+    return clarityPercentage.toFixed(2);
   };
+
+
 
   const countSyllables = (word) => {
     word = word.toLowerCase();
@@ -152,13 +178,52 @@ function App() {
       },
     });
 
+    // const clarityChart = new Chart(clarityCtx, {
+    //   type: 'line',
+    //   data: {
+    //     datasets: [
+    //       {
+    //         label: 'Clarity Score',
+    //         data: clarityData.map((data) => ({ x: data.message, y: data.clarity })),
+    //         backgroundColor: 'rgba(75, 192, 192, 0.2)',
+    //         borderColor: 'rgba(75, 192, 192, 1)',
+    //         borderWidth: 1,
+    //         pointRadius: 0,
+    //       },
+    //     ],
+    //   },
+    //   options: {
+    //     scales: {
+    //       x: {
+    //         title: {
+    //           display: true,
+    //           text: 'Message',
+    //         },
+    //       },
+    //       y: {
+    //         title: {
+    //           display: true,
+    //           text: 'Clarity',
+    //         },
+    //         min: 0,
+    //         max: 100,
+    //       },
+    //     },
+    //     plugins: {
+    //       legend: {
+    //         display: false,
+    //       },
+    //     },
+    //   },
+    // });
+
     const clarityChart = new Chart(clarityCtx, {
       type: 'line',
       data: {
         datasets: [
           {
             label: 'Clarity Score',
-            data: clarityData.map((data, index) => ({ x: index, y: data.clarity })),
+            data: clarityData.map((data) => ({ x: data.message, y: data.clarity })),
             backgroundColor: 'rgba(75, 192, 192, 0.2)',
             borderColor: 'rgba(75, 192, 192, 1)',
             borderWidth: 1,
@@ -171,16 +236,19 @@ function App() {
           x: {
             title: {
               display: true,
-              text: 'Time',
+              text: 'Message',
             },
           },
           y: {
             title: {
               display: true,
-              text: 'Clarity',
+              text: 'Clarity (%)',
             },
             min: 0,
-            max: 10,
+            max: 100,
+            ticks: {
+              callback: (value) => `${value}%`,
+            },
           },
         },
         plugins: {
@@ -190,6 +258,8 @@ function App() {
         },
       },
     });
+
+
 
     return () => {
       confidenceChart.destroy();
@@ -240,3 +310,4 @@ function App() {
 }
 
 export default App;
+
