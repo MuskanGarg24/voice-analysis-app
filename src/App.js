@@ -40,24 +40,6 @@ function App() {
     setClarityData(clarityData.concat([{ message, clarity }]));
   };
 
-  // const calculateClarity = (message) => {
-  //   // Split the message into words
-  //   const words = message.split(' ');
-
-  //   // Calculate the total number of syllables in the message
-  //   let syllableCount = 0;
-  //   words.forEach((word) => {
-  //     syllableCount += countSyllables(word);
-  //   });
-
-  //   // Calculate the average number of syllables per word
-  //   const avgSyllablesPerWord = syllableCount / words.length;
-
-  //   // Calculate the clarity score
-  //   const clarity = 206.835 - (1.015 * avgSyllablesPerWord) - (84.6 * (words.length / message.length));
-
-  //   return clarity.toFixed(2);
-  // };
 
   const calculateClarity = (message) => {
     // Split the message into words
@@ -178,44 +160,6 @@ function App() {
       },
     });
 
-    // const clarityChart = new Chart(clarityCtx, {
-    //   type: 'line',
-    //   data: {
-    //     datasets: [
-    //       {
-    //         label: 'Clarity Score',
-    //         data: clarityData.map((data) => ({ x: data.message, y: data.clarity })),
-    //         backgroundColor: 'rgba(75, 192, 192, 0.2)',
-    //         borderColor: 'rgba(75, 192, 192, 1)',
-    //         borderWidth: 1,
-    //         pointRadius: 0,
-    //       },
-    //     ],
-    //   },
-    //   options: {
-    //     scales: {
-    //       x: {
-    //         title: {
-    //           display: true,
-    //           text: 'Message',
-    //         },
-    //       },
-    //       y: {
-    //         title: {
-    //           display: true,
-    //           text: 'Clarity',
-    //         },
-    //         min: 0,
-    //         max: 100,
-    //       },
-    //     },
-    //     plugins: {
-    //       legend: {
-    //         display: false,
-    //       },
-    //     },
-    //   },
-    // });
 
     const clarityChart = new Chart(clarityCtx, {
       type: 'line',
